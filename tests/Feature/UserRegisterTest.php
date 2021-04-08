@@ -294,22 +294,4 @@ class UserRegisterTest extends TestCase
         ]);
     }
 
-    public function test_registered_user_should_be_log_in_after_registering_process()
-    {
-        $registerData = [
-            'name' => 'test user',
-            'email' => 'tes.user@gmail.com',
-            'password' => '123456',
-            'password_confirmation' => '123456'
-        ];
-
-        $this->postJson(route('user-register.store'), $registerData);
-
-        $user =  User::where('email', $registerData['email'])->first();
-
-        $this->assertTrue(auth()->check());
-
-        $this->assertAuthenticatedAs($user);
-    }
-
 }

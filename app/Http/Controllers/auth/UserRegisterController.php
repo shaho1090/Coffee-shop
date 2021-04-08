@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Auth;
 
 class UserRegisterController extends Controller
 {
-
     public function store(Request $request): JsonResponse
     {
         $request->validate([
@@ -26,8 +25,6 @@ class UserRegisterController extends Controller
             'password' => bcrypt($request->get('password')),
             'role_id' => Role::customer()->first()->id
         ]);
-
-        Auth::login($user);
 
         return response()->json([
             'user' => $user,
