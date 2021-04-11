@@ -21,7 +21,7 @@ class CreateRolesTable extends Migration
         });
 
         DB::table('roles')->insert([
-            ['title' => 'admin'],
+            ['title' => 'manager'],
             ['title' => 'customer']
         ]);
     }
