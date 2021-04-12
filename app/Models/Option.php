@@ -29,4 +29,19 @@ class Option extends Model
     {
         return $this->belongsTo(Option::class,'parent_id');
     }
+
+    public function addChild(string $name)
+    {
+        $request = [
+            'name' => $name,
+            'parent_id' => $this->id,
+        ];
+
+        return $this->createNew($request);
+    }
+
+    public function productVariant()
+    {
+        return $this->hasMany(ProductVariant::class,'option_id');
+    }
 }
