@@ -18,6 +18,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user()->toJson();
 });
 
-
 require __DIR__ . '/auth.php';
 require __DIR__ . '/option.php';
+require __DIR__ . '/product.php';
