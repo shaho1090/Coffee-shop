@@ -9,7 +9,6 @@ use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\ManagerSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -95,7 +94,7 @@ class ProductTest extends TestCase
         ]);
     }
 
-    public function test_the_manager_can_see_a_product()
+    public function test_the_customer_can_see_a_product()
     {
         $customer = User::factory()->create();
 
@@ -127,7 +126,7 @@ class ProductTest extends TestCase
         ]);
     }
 
-    public function test_a_customer_can_see_a_product()
+    public function test_a_manager_can_see_a_product()
     {
         $this->withoutExceptionHandling();
 
@@ -156,9 +155,11 @@ class ProductTest extends TestCase
 
     public function test_a_costumer_can_see_all_products()
     {
-        $this->withoutExceptionHandling();
+        $customer = User::factory()->create();
 
-        Sanctum::actingAs(User::where('email', 'manager_one@gmail.com')->first());
+        $customer->grantRole(Role::customer()->first());
+
+        Sanctum::actingAs($customer);
 
         $productA = ProductVariant::factory()->create()->product;
         $productB = ProductVariant::factory()->create()->product;

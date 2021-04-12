@@ -19,5 +19,4 @@ Route::group(['middleware' => 'auth:sanctum',], function () {
         ->name('product.store')
         ->middleware('can:create,'.Product::class);
 
-
 });
