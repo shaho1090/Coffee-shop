@@ -19,4 +19,14 @@ class Option extends Model
             'level' => $request['parent_id'] ? ((int)Option::find($request['parent_id'])->level) + 1 : 0,
         ]);
     }
+
+    public function ProductVariants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Option::class,'parent_id');
+    }
 }
