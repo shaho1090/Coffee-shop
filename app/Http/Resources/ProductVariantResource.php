@@ -15,8 +15,9 @@ class ProductVariantResource extends JsonResource
      */
     public function toArray($request)
     {
-//        dd($this);
         return [
+            'id' => $this->id,
+            'product' => $this->product,
             'option' => new OptionResource($this->option),
             'price' => $this->price,
         ];
