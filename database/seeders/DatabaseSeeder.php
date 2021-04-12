@@ -14,5 +14,7 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         (new ManagerSeeder())->run();
+        (new OrderStatusSeeder())->run();
+        (new SampleOptionSeeder())->run();
     }
 }
