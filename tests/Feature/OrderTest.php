@@ -60,12 +60,12 @@ class OrderTest extends TestCase
             'status_id' => OrderStatus::waiting()->id
         ]);
 
-        $this->assertDatabaseHas('order_lines',[
+        $this->assertDatabaseHas('order_lines', [
             'product_variant_id' => $orderData['order_data'][0]['product_variant_id'],
             'quantity' => $orderData['order_data'][0]['quantity'],
         ]);
 
-        $this->assertDatabaseHas('order_lines',[
+        $this->assertDatabaseHas('order_lines', [
             'product_variant_id' => $orderData['order_data'][1]['product_variant_id'],
             'quantity' => $orderData['order_data'][1]['quantity'],
         ]);
@@ -80,14 +80,69 @@ class OrderTest extends TestCase
 
         Sanctum::actingAs($customer);
 
-        $orders = OrderHeader::factory(2)->hasLines(3)->create([
+        $orders = OrderHeader::factory()->hasLines(2)->create([
             'user_id' => $customer->id,
         ]);
 
-//        dd($orders->load('lines'));
+//        dd($orders->lines()->first()->productVariant()->first());
 
-        $this->getJson(route('order.index'))->dump();
-
+        $this->getJson(route('order.index'))
+            ->assertJsonFragment([
+                "id" => $customer->id,
+                "name" => $customer->name,
+                "email" => $customer->email,
+            ])->assertJsonFragment([
+                    "status" => "waiting",
+                    "total_price" => $orders->total_price,
+                    "lines" =>
+                        [
+                            [
+                                "id" => $orders->lines()->first()->id,
+                                "quantity" => $orders->lines()->first()->quantity,
+                                "product_variant" => [
+                                    "id" => $orders->lines()->first()->product_variant_id,
+                                    "product" => [
+                                        "id" => $orders->lines()->first()->productVariant->product->id,
+                                        "name" => "Dr. Icie Spinka III",
+//                                        "created_at" => "2021-04-13T12 =>08 =>04.000000Z",
+//                                        "updated_at" => "2021-04-13T12 =>08 =>04.000000Z",
+//                                    ],
+//                                    "option" => [
+//                                        "id" => 16,
+//                                        "name" => "Chase Morar",
+//                                        "parent" => null,
+//                                    ],
+//                                    "price" => "43",
+//                                ],
+//                                "line_total_price" => 172,
+//                            ],
+//                            [
+//                                "id" => 2,
+//                                "quantity" => "94",
+//                                "product_variant" => [
+//                                    "id" => 2,
+//                                    "product" => [
+//                                        "id" => 2,
+//                                        "name" => "Neoma Gleason DDS",
+//                                        "created_at" => "2021-04-13T12 =>08 =>04.000000Z",
+//                                        "updated_at" => "2021-04-13T12 =>08 =>04.000000Z",
+//                                    ],
+//                                    "option" => [
+//                                        "id" => 17,
+//                                        "name" => "Meaghan Moen",
+//                                        "parent" => null,
+//                                    ],
+//                                    "price" => "55",
+//                                    "line_total_price" => 5170,
+//                                ]
+//                            ]
+                        ]
+                        ]
+            ])->dump();
+//            ->assertJsonFragment([
+//                "quantity" => $orders->lines()->first()->quantity,
+//                "product_variant" =>  $orders->lines()->first()->productVariant()->first()
+//            ])->dump();
 
 
     }

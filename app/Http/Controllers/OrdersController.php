@@ -13,7 +13,9 @@ class OrdersController extends Controller
     {
         $orders = auth()->user()->orders()->get();
 
-        return new OrderHeaderCollection($orders);
+        return response([
+            'orders' => new OrderHeaderCollection($orders)
+        ]);
     }
 
     public function store(Request $request)
