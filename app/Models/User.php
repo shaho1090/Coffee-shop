@@ -63,4 +63,9 @@ class User extends Authenticatable
     {
         $this->roles()->attach($role);
     }
+
+    public function orders()
+    {
+        return $this->hasMany(OrderHeader::class);
+    }
 }
