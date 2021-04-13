@@ -2,18 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\OrderResource;
-use App\Models\Order;
+use App\Http\Resources\OrderHeaderCollection;
+use App\Http\Resources\OrderHeaderResource;
+use App\Models\OrderHeader;
 use Illuminate\Http\Request;
 
 class OrdersController extends Controller
 {
+    public function index()
+    {
+        $orders = auth()->user()->orders()->get();
+
+        return new OrderHeaderCollection($orders);
+    }
+
     public function store(Request $request)
     {
-        $order = (new Order)->createNew($request->toArray());
+        $orderHeader = (new OrderHeader)->createNew()
+            ->addLines($request->get('order_data'));
 
         return response([
-            'order' => new OrderResource($order->load('productVariant'))
+            'order' => new OrderHeaderResource($orderHeader->load('lines'))
         ]);
     }
 }
