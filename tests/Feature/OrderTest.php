@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Http\Resources\OrderLineResource;
 use App\Models\Option;
+use App\Models\OrderHeader;
 use App\Models\OrderStatus;
 use App\Models\ProductVariant;
 use App\Models\Role;
@@ -35,20 +37,58 @@ class OrderTest extends TestCase
 
         Sanctum::actingAs($customer);
 
-        $productVariant = ProductVariant::factory()->create();
+        $productVariantA = ProductVariant::factory()->create();
+        $productVariantB = ProductVariant::factory()->create();
 
         $orderData = [
-            'product_variant_id' => $productVariant->id,
-            'quantity' => 3,
+            'order_data' => [
+                [
+                    'product_variant_id' => $productVariantA->id,
+                    'quantity' => 1,
+                ],
+                [
+                    'product_variant_id' => $productVariantB->id,
+                    'quantity' => 4,
+                ]
+            ]
         ];
 
-        $this->postJson(route('order.store'),$orderData);
+        $this->postJson(route('order.store'), $orderData)->dump();
 
-        $this->assertDatabaseHas('orders',[
+        $this->assertDatabaseHas('order_headers', [
             'user_id' => $customer->id,
-            'product_variant_id' => $orderData['product_variant_id'],
-            'quantity' => $orderData['quantity'],
             'status_id' => OrderStatus::waiting()->id
         ]);
+
+        $this->assertDatabaseHas('order_lines',[
+            'product_variant_id' => $orderData['order_data'][0]['product_variant_id'],
+            'quantity' => $orderData['order_data'][0]['quantity'],
+        ]);
+
+        $this->assertDatabaseHas('order_lines',[
+            'product_variant_id' => $orderData['order_data'][1]['product_variant_id'],
+            'quantity' => $orderData['order_data'][1]['quantity'],
+        ]);
+    }
+
+    public function test_a_customer_can_see_its_orders()
+    {
+        $this->withoutExceptionHandling();
+        $customer = User::factory()->create();
+
+        $customer->grantRole(Role::customer()->first());
+
+        Sanctum::actingAs($customer);
+
+        $orders = OrderHeader::factory(2)->hasLines(3)->create([
+            'user_id' => $customer->id,
+        ]);
+
+//        dd($orders->load('lines'));
+
+        $this->getJson(route('order.index'))->dump();
+
+
+
     }
 }
