@@ -143,7 +143,5 @@ class OrderTest extends TestCase
 //                "quantity" => $orders->lines()->first()->quantity,
 //                "product_variant" =>  $orders->lines()->first()->productVariant()->first()
 //            ])->dump();
-
-
     }
 }
