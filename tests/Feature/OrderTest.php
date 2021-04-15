@@ -91,7 +91,7 @@ class OrderTest extends TestCase
             ]);
     }
 
-    public function test_the_a_customer_can_update_its_order_when_it_status_is_waiting()
+    public function test_a_customer_can_update_its_order_when_the_status_is_in_waiting()
     {
         $this->withoutExceptionHandling();
         $customer = User::factory()->create();
@@ -132,6 +132,61 @@ class OrderTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('order_lines', [
+            'header_id' => $order->id,
+            'id' => $orderUpdateData['order_data'][1]['line_id'],
+            'product_variant_id' => $orderUpdateData['order_data'][1]['product_variant_id'],
+            'quantity' => $orderUpdateData['order_data'][1]['quantity']
+        ]);
+    }
+
+    public function test_a_customer_can_not_update_order_when_the_status_is_not_in_waiting()
+    {
+        $customer = User::factory()->create();
+
+        $customer->grantRole(Role::customer()->first());
+
+        Sanctum::actingAs($customer);
+
+        $order = OrderHeader::factory()->hasLines(2)->create([
+            'user_id' => $customer->id,
+        ]);
+
+        $order->update([
+            'status_id' => OrderStatus::preparation()->id
+        ]);
+
+        $productVariantA = ProductVariant::factory()->create();
+        $productVariantB = ProductVariant::factory()->create();
+
+        $orderUpdateData = [
+            'order_data' => [
+                [
+                    'line_id' => $order->lines()->first()->id,
+                    'product_variant_id' => $productVariantA->id,
+                    'quantity' => 4,
+                ],
+                [
+                    'line_id' => $order->lines()->get()->last()->id,
+                    'product_variant_id' => $productVariantB->id,
+                    'quantity' => 5,
+                ]
+            ]
+        ];
+
+        $this->patchJson(route('order.update', $order), $orderUpdateData)
+        ->assertJsonFragment([
+            'error' => true,
+            'message' => 'The order can not be changed!'
+        ]);
+
+        $this->assertDatabaseMissing('order_lines', [
+            'header_id' => $order->id,
+            'id' => $orderUpdateData['order_data'][0]['line_id'],
+            'product_variant_id' => $orderUpdateData['order_data'][0]['product_variant_id'],
+            'quantity' => $orderUpdateData['order_data'][0]['quantity']
+        ]);
+
+        $this->assertDatabaseMissing('order_lines', [
             'header_id' => $order->id,
             'id' => $orderUpdateData['order_data'][1]['line_id'],
             'product_variant_id' => $orderUpdateData['order_data'][1]['product_variant_id'],
