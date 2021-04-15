@@ -46,40 +46,7 @@ class ProductTest extends TestCase
             ]
         ];
 
-        $this->postJson(route('product.store'), $productData)//->dump();
-        ->assertJsonFragment([
-            "product" => [
-                "id" => Product::first()->id,
-                "name" => Product::first()->name,
-                "variants" => [
-                    [
-                        "option" => [
-                            "id" => $optionA->id,
-                            "name" => $optionA->name,
-                            "parent" => [
-                                "id" => $optionA->parent->id,
-                                "name" => $optionA->parent->name,
-                                "parent" => null,
-                            ],
-                        ],
-                        "price" => (string)$productData['variants'][0]['price'],
-                    ],
-                    [
-                        "option" => [
-                            "id" => $optionB->id,
-                            "name" => $optionB->name,
-                            "parent" => [
-                                "id" => $optionB->parent->id,
-                                "name" => $optionB->parent->name,
-                                "parent" => null,
-                            ],
-                        ],
-                        "price" => (string)$productData['variants'][1]['price'],
-                    ],
-
-                ],
-            ],
-        ]);
+        $this->postJson(route('product.store'), $productData);
 
         $this->assertDatabaseHas('products', [
             'name' => $productData['name']
@@ -107,22 +74,12 @@ class ProductTest extends TestCase
         $product = $productVariant->product;
 
         $this->getJson(route('product.show', $product))//->dump();
-
         ->assertJsonFragment([
-            "product" => [
-                "id" => $product->id,
-                "name" => $product->name,
-                "variants" => [
-                    [
-                        "option" => [
-                            "id" => $product->variants()->first()->option->id,
-                            "name" => $product->variants()->first()->option->name,
-                            "parent" => null
-                        ],
-                        "price" => $product->variants()->first()->price,
-                    ],
-                ],
-            ],
+            "id" => $product->id,
+            "name" => $product->name,
+        ])->assertJsonFragment([
+            "id" => $product->variants()->first()->option->id,
+            "name" => $product->variants()->first()->option->name,
         ]);
     }
 
@@ -134,23 +91,14 @@ class ProductTest extends TestCase
 
         $product = ProductVariant::factory()->create()->product;
 
-        $this->getJson(route('product.show', $product))//->dump();
-        ->assertJsonFragment([
-            "product" => [
+        $this->getJson(route('product.show', $product))
+            ->assertJsonFragment([
                 "id" => $product->id,
                 "name" => $product->name,
-                "variants" => [
-                    [
-                        "option" => [
-                            "id" => $product->variants()->first()->option->id,
-                            "name" => $product->variants()->first()->option->name,
-                            "parent" => null
-                        ],
-                        "price" => $product->variants()->first()->price,
-                    ],
-                ],
-            ],
-        ]);
+            ])->assertJsonFragment([
+                "id" => $product->variants()->first()->option->id,
+                "name" => $product->variants()->first()->option->name,
+            ]);
     }
 
     public function test_a_costumer_can_see_all_products()
@@ -166,36 +114,17 @@ class ProductTest extends TestCase
 
         $this->getJson(route('product.index'))//->dump();
         ->assertJsonFragment([
-            "products" => [
-                [
-                    "id" => $productA->id,
-                    "name" => $productA->name,
-                    "variants" => [
-                        [
-                            "option" => [
-                                "id" => $productA->variants()->first()->option->id,
-                                "name" => $productA->variants()->first()->option->name,
-                                "parent" => null
-                            ],
-                            "price" => $productA->variants()->first()->price,
-                        ],
-                    ],
-                ],
-                [
-                    "id" => $productB->id,
-                    "name" => $productB->name,
-                    "variants" => [
-                        [
-                            "option" => [
-                                "id" => $productB->variants()->first()->option->id,
-                                "name" => $productB->variants()->first()->option->name,
-                                "parent" => null
-                            ],
-                            "price" => $productB->variants()->first()->price,
-                        ],
-                    ],
-                ],
-            ],
+            "id" => $productA->id,
+            "name" => $productA->name,
+        ])->assertJsonFragment([
+            "id" => $productB->id,
+            "name" => $productB->name,
+        ])->assertJsonFragment([
+            "id" => $productA->variants()->first()->option->id,
+            "name" => $productA->variants()->first()->option->name,
+        ])->assertJsonFragment([
+            "id" => $productB->variants()->first()->option->id,
+            "name" => $productB->variants()->first()->option->name,
         ]);
     }
 }
