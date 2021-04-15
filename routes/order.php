@@ -17,7 +17,12 @@ Route::group(['middleware' => 'auth:sanctum',], function () {
         ->name('order.show');
 
     Route::patch('/order/{order}', [OrdersController::class, 'update'])
-        ->name('order.update');
+        ->name('order.update')
+        ->middleware('can:update,order');
+
+    Route::delete('/order/{order}', [OrdersController::class, 'destroy'])
+        ->name('order.destroy')
+        ->middleware('can:delete,order');
 
     Route::post('/order', [OrdersController::class, 'store'])
         ->name('order.store');
