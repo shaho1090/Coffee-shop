@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 class OrderHeader extends Model
@@ -12,7 +14,7 @@ class OrderHeader extends Model
 
     protected $guarded = [];
 
-    protected $appends =[
+    protected $appends = [
         'total_price',
         'status',
     ];
@@ -31,9 +33,9 @@ class OrderHeader extends Model
         return OrderStatus::find($this->status_id)->title;
     }
 
-    public function lines()
+    public function lines(): HasMany
     {
-        return $this->hasMany(OrderLine::class,'header_id','id');
+        return $this->hasMany(OrderLine::class, 'header_id', 'id');
     }
 
     public function createNew()
@@ -45,9 +47,9 @@ class OrderHeader extends Model
         ]);
     }
 
-    public function addLines(array $orderLines)
+    public function addLines(array $orderLines): OrderHeader
     {
-        foreach($orderLines as $line){
+        foreach ($orderLines as $line) {
             $this->lines()->create([
                 'product_variant_id' => $line['product_variant_id'],
                 'quantity' => $line['quantity'],
@@ -57,9 +59,26 @@ class OrderHeader extends Model
         return $this;
     }
 
-    public function customer()
+    public function customer(): BelongsTo
     {
-        return $this->belongsTo(User::class,'user_id');
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * @param array $lines
+     */
+    public function updateLines(array $lines)
+    {
+        foreach ($lines as $line) {
+            $orderLine = $this->lines()->find($line['line_id']);
+            unset($line['line_id']);
+            $orderLine->update($line);
+        }
+    }
+
+    public function isInWaitingState(): bool
+    {
+        return $this->status_id == OrderStatus::waiting()->id;
     }
 
 }

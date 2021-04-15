@@ -2,18 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Http\Resources\OrderLineResource;
-use App\Models\Option;
 use App\Models\OrderHeader;
 use App\Models\OrderStatus;
 use App\Models\ProductVariant;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
-use Database\Seeders\ManagerSeeder;
-use Database\Seeders\OrderStatusSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -53,7 +48,7 @@ class OrderTest extends TestCase
             ]
         ];
 
-        $this->postJson(route('order.store'), $orderData)->dump();
+        $this->postJson(route('order.store'), $orderData);
 
         $this->assertDatabaseHas('order_headers', [
             'user_id' => $customer->id,
@@ -71,7 +66,7 @@ class OrderTest extends TestCase
         ]);
     }
 
-    public function test_a_customer_can_see_its_orders()
+    public function test_a_customer_can_see_its_order()
     {
         $this->withoutExceptionHandling();
         $customer = User::factory()->create();
@@ -80,68 +75,67 @@ class OrderTest extends TestCase
 
         Sanctum::actingAs($customer);
 
-        $orders = OrderHeader::factory()->hasLines(2)->create([
+        $order = OrderHeader::factory()->hasLines(2)->create([
             'user_id' => $customer->id,
         ]);
 
-//        dd($orders->lines()->first()->productVariant()->first());
+        $this->getJson(route('order.index'))
+            ->assertJsonFragment([
+                "id" => $customer->id,
+                "name" => $customer->name,
+                "email" => $customer->email,
+            ])->assertJsonFragment([
+                "id" => $order->first()->id,
+                "status" => "waiting",
+                "total_price" => $order->total_price,
+            ]);
+    }
 
-        $this->getJson(route('order.index'));
-//            ->assertJsonFragment([
-//                "id" => $customer->id,
-//                "name" => $customer->name,
-//                "email" => $customer->email,
-//            ])->assertJsonFragment([
-//                    "status" => "waiting",
-//                    "total_price" => $orders->total_price,
-//                    "lines" =>
-//                        [
-//                            [
-//                                "id" => $orders->lines()->first()->id,
-//                                "quantity" => $orders->lines()->first()->quantity,
-//                                "product_variant" => [
-//                                    "id" => $orders->lines()->first()->product_variant_id,
-//                                    "product" => [
-//                                        "id" => $orders->lines()->first()->productVariant->product->id,
-//                                        "name" => "Dr. Icie Spinka III",
-//                                        "created_at" => "2021-04-13T12 =>08 =>04.000000Z",
-//                                        "updated_at" => "2021-04-13T12 =>08 =>04.000000Z",
-//                                    ],
-//                                    "option" => [
-//                                        "id" => 16,
-//                                        "name" => "Chase Morar",
-//                                        "parent" => null,
-//                                    ],
-//                                    "price" => "43",
-//                                ],
-//                                "line_total_price" => 172,
-//                            ],
-//                            [
-//                                "id" => 2,
-//                                "quantity" => "94",
-//                                "product_variant" => [
-//                                    "id" => 2,
-//                                    "product" => [
-//                                        "id" => 2,
-//                                        "name" => "Neoma Gleason DDS",
-//                                        "created_at" => "2021-04-13T12 =>08 =>04.000000Z",
-//                                        "updated_at" => "2021-04-13T12 =>08 =>04.000000Z",
-//                                    ],
-//                                    "option" => [
-//                                        "id" => 17,
-//                                        "name" => "Meaghan Moen",
-//                                        "parent" => null,
-//                                    ],
-//                                    "price" => "55",
-//                                    "line_total_price" => 5170,
-//                                ]
-//                            ]
-//                        ]
-//                        ]
-//            ])->dump();
-//            ->assertJsonFragment([
-//                "quantity" => $orders->lines()->first()->quantity,
-//                "product_variant" =>  $orders->lines()->first()->productVariant()->first()
-//            ])->dump();
+    public function test_the_a_customer_can_update_its_order_when_it_status_is_waiting()
+    {
+        $this->withoutExceptionHandling();
+        $customer = User::factory()->create();
+
+        $customer->grantRole(Role::customer()->first());
+
+        Sanctum::actingAs($customer);
+
+        $order = OrderHeader::factory()->hasLines(2)->create([
+            'user_id' => $customer->id,
+        ]);
+
+        $productVariantA = ProductVariant::factory()->create();
+        $productVariantB = ProductVariant::factory()->create();
+
+        $orderUpdateData = [
+            'order_data' => [
+                [
+                    'line_id' => $order->lines()->first()->id,
+                    'product_variant_id' => $productVariantA->id,
+                    'quantity' => 4,
+                ],
+                [
+                    'line_id' => $order->lines()->get()->last()->id,
+                    'product_variant_id' => $productVariantB->id,
+                    'quantity' => 5,
+                ]
+            ]
+        ];
+
+        $this->patchJson(route('order.update', $order), $orderUpdateData);
+
+        $this->assertDatabaseHas('order_lines', [
+            'header_id' => $order->id,
+            'id' => $orderUpdateData['order_data'][0]['line_id'],
+            'product_variant_id' => $orderUpdateData['order_data'][0]['product_variant_id'],
+            'quantity' => $orderUpdateData['order_data'][0]['quantity']
+        ]);
+
+        $this->assertDatabaseHas('order_lines', [
+            'header_id' => $order->id,
+            'id' => $orderUpdateData['order_data'][1]['line_id'],
+            'product_variant_id' => $orderUpdateData['order_data'][1]['product_variant_id'],
+            'quantity' => $orderUpdateData['order_data'][1]['quantity']
+        ]);
     }
 }
